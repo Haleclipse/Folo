@@ -309,6 +309,8 @@ jobs:
       - name: Create Release Draft
         if: env.RELEASE == 'true'
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
         with:
           name: ${{ github.event.inputs.enterprise_mode == 'true' && format('Desktop v{0} (Enterprise Edition)', steps.version.outputs.APP_VERSION) || format('Desktop v{0}', steps.version.outputs.APP_VERSION) }}
           draft: false
