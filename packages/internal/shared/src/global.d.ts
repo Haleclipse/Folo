@@ -7,6 +7,10 @@ declare global {
   }
 
   export const ELECTRON: boolean
+
+  interface ImportMetaEnv {
+    VITE_ENTERPRISE_MODE?: string
+  }
 }
 
 export {}
