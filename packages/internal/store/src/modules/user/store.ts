@@ -1,6 +1,7 @@
 import { UserRole } from "@follow/constants"
 import type { UserSchema } from "@follow/database/schemas/types"
 import { UserService } from "@follow/database/services/user"
+import { IS_ENTERPRISE_MODE } from "@follow/shared/constants"
 import type { AuthUser } from "@follow-app/client-sdk"
 import { create, indexedResolver, windowScheduler } from "@yornaath/batshit"
 
@@ -88,14 +89,23 @@ class UserSyncService {
 
     if (!res.user) return res
     const user = apiMorph.toWhoami(res.user)
+
+    // 企业版模式: 强制所有用户为 Pro 角色
+    const effectiveRole = IS_ENTERPRISE_MODE ? UserRole.Pro : (res.user?.role as UserRole | null)
+
     immerSet((state) => {
       state.whoami = { ...user, emailVerified: res.user?.emailVerified ?? false }
-      state.role = res.user?.role as UserRole | null
+      state.role = effectiveRole
       if (res.user?.roleEndAt) {
         state.roleEndAt = new Date(res.user?.roleEndAt)
       }
-      state.rsshubSubscriptionLimit = res.rsshubSubscriptionLimit ?? null
-      state.feedSubscriptionLimit = res.feedSubscriptionLimit ?? null
+      // 企业版模式: 设置为 Pro 级别的订阅限制
+      state.rsshubSubscriptionLimit = IS_ENTERPRISE_MODE
+        ? 999999
+        : (res.rsshubSubscriptionLimit ?? null)
+      state.feedSubscriptionLimit = IS_ENTERPRISE_MODE
+        ? 999999
+        : (res.feedSubscriptionLimit ?? null)
     })
     userActions.upsertMany([user])
 
@@ -198,7 +208,10 @@ class UserSyncService {
     const res = await api().invitations.use({ code })
     if (res.code === 0) {
       immerSet((state) => {
-        state.role = UserRole.Pro
+        // 企业版模式下已经是 Pro,无需更新
+        if (!IS_ENTERPRISE_MODE) {
+          state.role = UserRole.Pro
+        }
       })
     }
 

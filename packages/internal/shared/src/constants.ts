@@ -43,3 +43,23 @@ export const MICROSOFT_STORE_BUILD =
     ? process.platform === "win32" &&
       (process.windowsStore || process.execPath.startsWith("C:\\Program Files\\WindowsApps"))
     : false
+
+/**
+ * 企业版模式: 当启用时,所有用户强制为 Pro 角色
+ * 通过环境变量 VITE_ENTERPRISE_MODE=true 启用
+ */
+export const IS_ENTERPRISE_MODE = (() => {
+  try {
+    // 优先检查 import.meta.env
+    if (import.meta !== undefined && import.meta.env?.VITE_ENTERPRISE_MODE === "true") {
+      return true
+    }
+    // 回退到 process.env (构建时)
+    if (typeof process !== "undefined" && process.env?.VITE_ENTERPRISE_MODE === "true") {
+      return true
+    }
+    return false
+  } catch {
+    return false
+  }
+})()

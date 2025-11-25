@@ -23,6 +23,9 @@ export const env = createEnv({
     VITE_POSTHOG_HOST: z.string().url().optional().default(DEFAULT_VALUES.PROD.POSTHOG_HOST),
 
     VITE_RECAPTCHA_V3_SITE_KEY: z.string().default(DEFAULT_VALUES.PROD.RECAPTCHA_V3_SITE_KEY),
+
+    // 企业版标识: 设置为 "true" 将强制所有用户为 Pro 角色
+    VITE_ENTERPRISE_MODE: z.string().optional(),
   },
 
   emptyStringAsUndefined: true,

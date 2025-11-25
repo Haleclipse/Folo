@@ -20,6 +20,10 @@ on:
       build_version:
         type: string
         description: "Build Version, only available when mas is true"
+      enterprise_mode:
+        type: boolean
+        description: "Build Enterprise Edition (Force Pro role for all users)"
+        default: false
 
 # https://docs.github.com/en/enterprise-cloud@latest/actions/writing-workflows/choosing-what-your-workflow-does/control-the-concurrency-of-workflows-and-jobs
 concurrency:
@@ -34,6 +38,8 @@ env:
   VITE_FIREBASE_CONFIG: ${{ vars.VITE_FIREBASE_CONFIG }}
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
   NODE_OPTIONS: --max-old-space-size=8192
+  # 企业版模式: 强制所有用户为 Pro 角色
+  VITE_ENTERPRISE_MODE: ${{ github.event.inputs.enterprise_mode == 'true' && 'true' || '' }}
 
 jobs:
   release:
@@ -128,6 +134,13 @@ jobs:
       - name: Install dependencies
         run: pnpm i
 
+      - name: Display Enterprise Mode Status
+        if: github.event.inputs.enterprise_mode == 'true'
+        run: |
+          echo "🏢 Enterprise Mode: ENABLED"
+          echo "   All users will be forced to Pro role"
+          echo "   VITE_ENTERPRISE_MODE=$VITE_ENTERPRISE_MODE"
+
       - name: Prebuild packages (Windows)
         if: runner.os == 'windows'
         run: pnpm run build:packages
@@ -186,7 +199,7 @@ jobs:
         uses: actions/upload-artifact@v5
         if: runner.os == 'macOS'
         with:
-          name: macos-arm64-dmg
+          name: ${{ github.event.inputs.enterprise_mode == 'true' && 'macos-arm64-dmg-enterprise' || 'macos-arm64-dmg' }}
           path: |
             apps/desktop/out/make/**/*arm64.dmg
             apps/desktop/out/make/**/latest-mac.yml
@@ -196,7 +209,7 @@ jobs:
         uses: actions/upload-artifact@v5
         if: runner.os == 'macOS'
         with:
-          name: macos-x64-dmg
+          name: ${{ github.event.inputs.enterprise_mode == 'true' && 'macos-x64-dmg-enterprise' || 'macos-x64-dmg' }}
           path: |
             apps/desktop/out/make/**/*x64.dmg
             apps/desktop/out/make/**/latest-mac.yml
@@ -206,7 +219,7 @@ jobs:
         uses: actions/upload-artifact@v5
         if: runner.os == 'macOS'
         with:
-          name: macos-mas-pkg
+          name: ${{ github.event.inputs.enterprise_mode == 'true' && 'macos-mas-pkg-enterprise' || 'macos-mas-pkg' }}
           path: |
             apps/desktop/out/make/**/*.pkg
           retention-days: 90
@@ -216,7 +229,7 @@ jobs:
         id: upload-unsigned-windows-x64-exe
         if: runner.os == 'windows'
         with:
-          name: windows-x64-exe
+          name: ${{ github.event.inputs.enterprise_mode == 'true' && 'windows-x64-exe-enterprise' || 'windows-x64-exe' }}
           path: |
             apps/desktop/out/make/**/*x64.exe
             apps/desktop/out/make/**/latest.yml
@@ -242,7 +255,7 @@ jobs:
         uses: actions/upload-artifact@v5
         if: runner.os == 'windows' && env.RELEASE == 'true'
         with:
-          name: windows-x64-exe
+          name: ${{ github.event.inputs.enterprise_mode == 'true' && 'windows-x64-exe-enterprise' || 'windows-x64-exe' }}
           path: |
             apps/desktop/out/make/**/*x64.exe
             apps/desktop/out/make/**/latest.yml
@@ -253,7 +266,7 @@ jobs:
         uses: actions/upload-artifact@v5
         if: runner.os == 'windows'
         with:
-          name: windows-x64-appx
+          name: ${{ github.event.inputs.enterprise_mode == 'true' && 'windows-x64-appx-enterprise' || 'windows-x64-appx' }}
           path: |
             apps/desktop/out/make/**/*.appx
           retention-days: 90
@@ -262,7 +275,7 @@ jobs:
         uses: actions/upload-artifact@v5
         if: runner.os == 'linux'
         with:
-          name: linux-x64-appimage
+          name: ${{ github.event.inputs.enterprise_mode == 'true' && 'linux-x64-appimage-enterprise' || 'linux-x64-appimage' }}
           path: |
             apps/desktop/out/make/**/*x64.AppImage
             apps/desktop/out/make/**/latest-linux.yml
@@ -297,10 +310,10 @@ jobs:
         if: env.RELEASE == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          name: Desktop v${{ steps.version.outputs.APP_VERSION }}
+          name: ${{ github.event.inputs.enterprise_mode == 'true' && format('Desktop v{0} (Enterprise Edition)', steps.version.outputs.APP_VERSION) || format('Desktop v{0}', steps.version.outputs.APP_VERSION) }}
           draft: false
           prerelease: true
-          tag_name: desktop/v${{ steps.version.outputs.APP_VERSION }}
+          tag_name: ${{ github.event.inputs.enterprise_mode == 'true' && format('desktop/v{0}-enterprise', steps.version.outputs.APP_VERSION) || format('desktop/v{0}', steps.version.outputs.APP_VERSION) }}
           files: |
             apps/desktop/out/make/**/Folo-*.dmg
             apps/desktop/out/make/**/Folo-*.zip
