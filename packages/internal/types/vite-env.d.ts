@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   VITE_OPENPANEL_CLIENT_ID: string
   VITE_OPENPANEL_API_URL: string
   VITE_FIREBASE_CONFIG: string
+  VITE_ENTERPRISE_MODE?: string
 }
 
 interface ImportMeta {
